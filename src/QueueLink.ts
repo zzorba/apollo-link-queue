@@ -41,9 +41,17 @@ export default class QueueLink extends ApolloLink {
         }
         return new Observable<FetchResult>((observer: Observer<FetchResult>) => {
             const operationEntry = { operation, forward, observer };
+            const collapseKey = operation.getContext().collapseKey;
+            if (collapseKey) {
+                this.removeOperation((e) => e.operation.getContext().collapseKey === collapseKey);
+            }
             this.enqueue(operationEntry);
             return () => this.cancelOperation(operationEntry);
         });
+    }
+
+    private removeOperation(removePredicate: (entry: OperationQueueEntry) => boolean) {
+        this.opQueue = this.opQueue.filter(e => !removePredicate(e));
     }
 
     private cancelOperation(entry: OperationQueueEntry) {
